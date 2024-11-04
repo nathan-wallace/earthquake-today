@@ -54,10 +54,11 @@ const earthGeometry = new THREE.SphereGeometry(30, 64, 64);
 const textureLoader = new THREE.TextureLoader();
 
 const earthMaterial = new THREE.MeshPhongMaterial({
-    map: textureLoader.load('/img/earth_atmos_2048.jpg'),
-    bumpMap: textureLoader.load('/img/earth_normal_2048.jpg'),
+
+    map: textureLoader.load('./earth_atmos_2048.jpg'),
+    bumpMap: textureLoader.load('./earth_normal_2048.jpg'),
+    specularMap: textureLoader.load('./earth_specular_2048.jpg'),
     bumpScale: 0.5,
-    specularMap: textureLoader.load('/img/earth_specular_2048.jpg'),
     specular: new THREE.Color('white'),
     shininess: 50
 });
