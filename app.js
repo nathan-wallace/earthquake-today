@@ -1,36 +1,48 @@
 // Import Three.js components
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio); // Increase resolution of rendering
-renderer.domElement.style.imageRendering = 'crisp-edges'; // Optional: Enhance rendering quality
-renderer.domElement.setAttribute('aria-label', '3D Earth Visualization'); // WCAG compliant
+const container = document.getElementById('container');
 
-document.body.appendChild(renderer.domElement);
+// Set up the renderer to use the existing canvas element
+const renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('earthquakeCanvas'),
+    antialias: true
+});
 
-// Set up camera position
-camera.position.z = 150;
+// Set the size of the renderer to the container's width and height
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.domElement.style.imageRendering = 'crisp-edges';
+renderer.domElement.setAttribute('aria-label', '3D Earth Visualization');
 
-// Raycaster and mouse for interactivity
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
-let rotationSpeed = 0.005;
+// Set up the camera
+const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+camera.position.z = 150; // Start closer for better initial zoom-in effect
 
-// Tooltip element
-const tooltip = document.createElement('div');
-tooltip.style.position = 'absolute';
-tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-tooltip.style.color = 'white';
-tooltip.style.padding = '5px';
-tooltip.style.display = 'none';
-tooltip.setAttribute('role', 'tooltip'); // WCAG compliant
-document.body.appendChild(tooltip);
+// Handle window resizing to keep the renderer and camera in sync with the container
+window.addEventListener('resize', () => {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+});
+
+// Add zoom functionality using the mouse wheel
+const MIN_ZOOM = 50;
+const MAX_ZOOM = 300;
+
+let userInteracted = false; // Track whether user has interacted
+
+container.addEventListener('wheel', (event) => {
+    camera.position.z += event.deltaY * 0.05;
+    camera.position.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.position.z));
+    event.preventDefault();
+    userInteracted = true; // User interaction detected, stop auto animation
+    updateSceneOnZoom();
+});
 
 // Add ambient and directional light
-const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white light
+const ambientLight = new THREE.AmbientLight(0x404040, 2);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -58,7 +70,7 @@ const atmosphereMaterial = new THREE.MeshBasicMaterial({
     color: 0x00aaff,
     side: THREE.BackSide,
     transparent: true,
-    opacity: 0.3
+    opacity: 0.1
 });
 const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
 scene.add(atmosphere);
@@ -67,14 +79,10 @@ scene.add(atmosphere);
 const earthGroup = new THREE.Group();
 earthGroup.add(earth);
 earthGroup.add(atmosphere);
+earthGroup.rotation.x = 20 * (Math.PI / 180); // Tilt down by 20 degrees
 scene.add(earthGroup);
 
-let dataPoints = [];
-const accelerationFactor = 1000; // Scale to speed up time (1 hour = 1 second)
-let currentTime = 0; // Set initial time to the beginning of the day
-let isPlaying = true; // Autoplay by default
-
-// Time slider element
+// Add UI elements (time slider and play/pause button)
 const timeSliderContainer = document.createElement('div');
 timeSliderContainer.style.position = 'absolute';
 timeSliderContainer.style.bottom = '20px';
@@ -84,60 +92,40 @@ timeSliderContainer.style.width = '80%';
 timeSliderContainer.style.textAlign = 'center';
 timeSliderContainer.style.color = 'white';
 timeSliderContainer.style.padding = '10px';
-timeSliderContainer.style.backgroundColor = '#1b1b1b'; // USWDS color scheme
-// Ensure mobile responsiveness
+timeSliderContainer.style.backgroundColor = '#1b1b1b';
 timeSliderContainer.style.borderRadius = '8px';
 timeSliderContainer.style.boxSizing = 'border-box';
-timeSliderContainer.style.maxWidth = '95%';
-timeSliderContainer.setAttribute('role', 'region'); // WCAG compliant
 document.body.appendChild(timeSliderContainer);
 
 const timeSliderLabel = document.createElement('label');
 timeSliderLabel.innerText = 'Time: ';
 timeSliderLabel.style.marginRight = '10px';
-timeSliderLabel.setAttribute('for', 'time-slider'); // WCAG compliant
 timeSliderContainer.appendChild(timeSliderLabel);
 
 const timeSlider = document.createElement('input');
 timeSlider.type = 'range';
-timeSlider.id = 'time-slider'; // For WCAG
 timeSlider.min = '0';
 timeSlider.max = '86400'; // Seconds in a day
 timeSlider.value = '0';
-timeSlider.style.width = '60%'; // Adjust width for better mobile responsiveness
-timeSlider.setAttribute('aria-valuemin', '0');
-timeSlider.setAttribute('aria-valuemax', '86400');
-timeSlider.setAttribute('aria-valuenow', '0');
-timeSlider.setAttribute('aria-label', 'Time slider'); // WCAG compliant
+timeSlider.style.width = '60%';
 timeSliderContainer.appendChild(timeSlider);
 
 const timeDisplay = document.createElement('span');
-timeDisplay.id = 'time-display';
 timeDisplay.style.marginLeft = '10px';
-timeDisplay.innerText = convertToAMPM(currentTime); // Set initial time
 timeSliderContainer.appendChild(timeDisplay);
 
 const playButton = document.createElement('button');
-playButton.innerText = 'Pause'; // Start in playing mode
+playButton.innerText = 'Pause';
 playButton.style.marginLeft = '10px';
-playButton.setAttribute('aria-label', 'Play/Pause button'); // WCAG compliant
 timeSliderContainer.appendChild(playButton);
 
-playButton.addEventListener('click', () => {
-    isPlaying = !isPlaying;
-    playButton.innerText = isPlaying ? 'Pause' : 'Play';
-    playButton.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
-});
+// Load and parse earthquake data
+let dataPoints = [];
+let hitboxes = [];
+let currentTime = 0; // Current time in seconds (0 - 86400)
+let isPlaying = true; // Play/Pause state
+const animationSpeed = 50; // Speed of time progression
 
-timeSlider.addEventListener('input', () => {
-    currentTime = parseInt(timeSlider.value) * 1000; // Update current time based on slider value
-    timeSlider.setAttribute('aria-valuenow', timeSlider.value);
-    timeDisplay.innerText = convertToAMPM(currentTime); // Update time display
-    isPlaying = false;
-    playButton.innerText = 'Play';
-});
-
-// Load and parse data
 async function loadData() {
     try {
         const response = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
@@ -148,7 +136,7 @@ async function loadData() {
     }
 }
 
-// Visualize data in 3D
+// Visualize earthquake data in 3D
 function visualizeData(data) {
     data.features.forEach(feature => {
         const { coordinates } = feature.geometry;
@@ -170,131 +158,204 @@ function visualizeData(data) {
         sphere.position.y = 30 * Math.cos(phi);
         sphere.position.z = 30 * Math.sin(phi) * Math.sin(theta);
 
+        // Create a slightly larger hitbox to make the tooltip easier to trigger
+        const hitboxGeometry = new THREE.SphereGeometry(0.6 * magnitude, 16, 16);
+        const hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
+        const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+        hitbox.position.copy(sphere.position);
+
         // Store earthquake properties in the sphere for tooltip and animation
         sphere.userData = {
             magnitude,
             place: feature.properties.place,
             time: new Date(time).toLocaleString(),
-            timestamp: time
+            timestamp: time,
+            pulsateCount: 0 // Track the number of pulsations
         };
 
         sphere.visible = false; // Initially hidden
+        hitbox.visible = false;
+
         earthGroup.add(sphere);
+        earthGroup.add(hitbox);
+
         dataPoints.push(sphere);
+        hitboxes.push(hitbox);
     });
 }
 
-// Handle mouse movement for tooltip
-function onMouseMove(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// Tooltip for showing earthquake details on hover
+const tooltip = document.createElement('div');
+tooltip.style.position = 'absolute';
+tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+tooltip.style.color = 'white';
+tooltip.style.padding = '10px';
+tooltip.style.borderRadius = '5px';
+tooltip.style.fontSize = '14px';
+tooltip.style.display = 'none';
+tooltip.style.pointerEvents = 'none'; // Ensures the tooltip does not interfere with pointer interactions
+tooltip.style.zIndex = '1000'; // Ensure tooltip is above other elements
+document.body.appendChild(tooltip);
+
+// Handle mouse movement for showing tooltip
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points = { threshold: 1.5 }; // Increase threshold to make smaller points easier to detect
+const mouse = new THREE.Vector2();
+
+container.addEventListener('mousemove', (event) => {
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(dataPoints.filter(point => point.visible));
+    const intersects = raycaster.intersectObjects(hitboxes.filter(hitbox => hitbox.visible));
 
     if (intersects.length > 0) {
         const intersected = intersects[0].object;
-        const { magnitude, place, time } = intersected.userData;
-        tooltip.style.display = 'block';
-        tooltip.style.left = `${event.clientX + 10}px`;
-        tooltip.style.top = `${event.clientY + 10}px`;
-        tooltip.innerHTML = `
-            <strong>Location:</strong> ${place}<br>
-            <strong>Magnitude:</strong> ${magnitude}<br>
-            <strong>Time:</strong> ${convertToAMPM(time)}
-        `;
+        const correspondingDataPoint = dataPoints.find(point => point.position.equals(intersected.position));
+        if (correspondingDataPoint) {
+            const { magnitude, place, time } = correspondingDataPoint.userData;
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${event.clientX + 10}px`;
+            tooltip.style.top = `${event.clientY + 10}px`;
+            tooltip.innerHTML = `
+                <strong>Location:</strong> ${place}<br>
+                <strong>Magnitude:</strong> ${magnitude}<br>
+                <strong>Time:</strong> ${time}
+            `;
+        }
     } else {
         tooltip.style.display = 'none';
     }
-}
+});
 
-// Handle mouse down and up for dragging
-function onMouseDown(event) {
+// Track current time for animation purposes
+let previousMousePosition = { x: 0, y: 0 };
+let isDragging = false;
+
+// Enable click-and-drag to rotate the globe
+container.addEventListener('mousedown', (event) => {
     isDragging = true;
+    userInteracted = true; // User interaction detected, stop auto animation
     previousMousePosition = {
         x: event.clientX,
         y: event.clientY
     };
-}
+});
 
-function onMouseUp(event) {
+container.addEventListener('mouseup', () => {
     isDragging = false;
-}
+});
 
-function onMouseMoveDrag(event) {
+container.addEventListener('mousemove', (event) => {
     if (isDragging) {
-        const deltaMove = {
-            x: event.clientX - previousMousePosition.x,
-            y: event.clientY - previousMousePosition.y
-        };
+        const deltaX = event.clientX - previousMousePosition.x;
+        const deltaY = event.clientY - previousMousePosition.y;
 
-        earthGroup.rotation.y += deltaMove.x * rotationSpeed;
-        earthGroup.rotation.x += deltaMove.y * rotationSpeed;
+        const rotationSpeed = 0.005;
+        earthGroup.rotation.y += deltaX * rotationSpeed;
+        earthGroup.rotation.x += deltaY * rotationSpeed;
 
         previousMousePosition = {
             x: event.clientX,
             y: event.clientY
         };
     }
-}
+});
 
-function toRadians(angle) {
-    return angle * (Math.PI / 180);
-}
+// Update the time slider and data point visibility
+function updateDataPoints() {
+    dataPoints.forEach((point, index) => {
+        const pointTime = point.userData.timestamp;
+        const timeElapsed = (currentTime * 1000) % (24 * 60 * 60 * 1000);
 
-// Convert time to AM/PM format
-function convertToAMPM(time) {
-    const date = new Date(time);
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // The hour '0' should be '12'
-    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    return `${hours}:${minutesStr} ${ampm}`;
-}
-
-// Animation loop with pulsating effect
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-
-    if (isPlaying) {
-        currentTime += 1000 / 60 * accelerationFactor; // Increment current time in accelerated seconds
-        if (currentTime >= 86400 * 1000) { // Loop time after a full day
-            currentTime = 0;
-        }
-        timeSlider.value = (currentTime / 1000).toFixed(0);
-        timeDisplay.innerText = convertToAMPM(currentTime); // Update time display
-    }
-
-    dataPoints.forEach(point => {
-        const timeDiff = currentTime - (point.userData.timestamp % (24 * 60 * 60 * 1000));
-        if (timeDiff > 0) { // Only show after occurrence
+        if (timeElapsed >= (pointTime % (24 * 60 * 60 * 1000))) {
             point.visible = true;
-            if (timeDiff < 3600000) { // Pulsate for 1 hour after occurrence
-                const scale = 1 + 0.5 * Math.sin((timeDiff / 3600000) * Math.PI * 2);
+            hitboxes[index].visible = true;
+
+            // Smooth and slower pulsating effect for two pulses
+            if (point.userData.pulsateCount < 2) {
+                const scale = 1 + 0.2 * Math.sin((Date.now() / 500) * Math.PI); // Slower and more gradual pulsation
                 point.scale.set(scale, scale, scale);
+                if (Math.sin((Date.now() / 500) * Math.PI) > 0.9) {
+                    point.userData.pulsateCount++;
+                }
             } else {
+                // Set to normal size, change to red, and reduce opacity
                 point.scale.set(1, 1, 1);
+                point.material.color.set('red');
+                point.material.opacity = 0.5;
+                point.material.transparent = true;
             }
         } else {
             point.visible = false;
+            hitboxes[index].visible = false;
         }
     });
 }
 
-// Event listeners
-window.addEventListener('mousemove', onMouseMove);
-window.addEventListener('mousedown', onMouseDown);
-window.addEventListener('mouseup', onMouseUp);
-window.addEventListener('mousemove', onMouseMoveDrag);
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}); // Ensure responsiveness on window resize
+// Play/pause button functionality
+playButton.addEventListener('click', () => {
+    isPlaying = !isPlaying;
+    playButton.innerText = isPlaying ? 'Pause' : 'Play';
+});
 
-// Call functions to load data and start animation
+// Time slider functionality
+timeSlider.addEventListener('input', () => {
+    currentTime = parseInt(timeSlider.value, 10);
+    timeDisplay.innerText = formatTime(currentTime);
+    updateDataPoints();
+});
+
+function formatTime(seconds) {
+    // Calculate the hours, minutes, and seconds
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    // Create a new Date object for the current day with the current time
+    const today = new Date();
+    today.setUTCHours(hours, minutes, 0, 0);
+
+    // Format the date using Intl.DateTimeFormat for a specific timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'America/New_York', // You can change this to any valid timezone or use user's default
+        timeZoneName: 'short' // Display the timezone abbreviation
+    });
+
+    return formatter.format(today);
+}
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+
+    // Default animation: Rotate and zoom in until user interaction
+    if (!userInteracted) {
+        earthGroup.rotation.y += 0.001; // Slow rotation
+        camera.position.z = Math.max(camera.position.z - 0.2, 100); // Slow zoom in until z = 100
+    }
+
+    // Update the time and visibility of data points if playing
+    if (isPlaying) {
+        currentTime = (currentTime + animationSpeed) % 86400;
+        timeSlider.value = currentTime;
+        timeDisplay.innerText = formatTime(currentTime);
+        updateDataPoints();
+    }
+}
+
+// Update the scene on camera movement (zoom)
+function updateSceneOnZoom() {
+    const scaleFactor = camera.position.z / 150;
+    dataPoints.forEach(point => {
+        point.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    });
+}
+
+// Load data and start the animation
 loadData();
 animate();

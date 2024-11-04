@@ -1,17 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Data Visualization</title>
+    <title>Earthquakes Today</title>
     <style>
-        body { margin: 0; }
-        canvas { display: block; }
+        /* Base styling for body and layout */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            background-color: #1b1b1b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header and footer styling */
+        header,
+        footer {
+            width: 100%;
+            padding: 15px;
+            background-color: #333333;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        /* Description styling */
+        #description {
+            margin: 15px;
+            max-width: 800px;
+            padding: 0 20px;
+            text-align: center;
+            color: #dddddd;
+        }
+
+        /* Canvas container styling with max dimensions to ensure responsiveness */
+        #container {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            max-height: 600px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: #1b1b1b;
+            margin: 15px 0; /* Add margin to visually separate from other sections */
+        }
+
+        /* Ensure the canvas fills the container with aspect ratio control */
+        #earthquakeCanvas {
+            width: 100%;
+            height: 100%;
+            max-height: 600px;
+            aspect-ratio: 16 / 9; /* Maintain an aspect ratio for better responsiveness */
+        }
+
+        /* Footer styling */
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #cccccc;
+        }
+
+        /* Responsive styles for smaller devices */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            #description {
+                font-size: 0.9em;
+                margin: 10px;
+            }
+
+            footer p {
+                font-size: 0.8em;
+            }
+
+            #container {
+                max-height: 400px; /* Adjust container size for smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.2em;
+            }
+
+            #description {
+                font-size: 0.8em;
+                margin: 5px;
+            }
+
+            footer p {
+                font-size: 0.7em;
+            }
+
+            #container {
+                max-height: 300px; /* Further reduce container height for very small screens */
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div id="container"></div>
+    <!-- Header -->
+    <header>
+        <h1>🌍 Earthquakes Today 🌏</h1>
+    </header>
+
+    <!-- Description section -->
+    <div id="description">
+        <p>Welcome to Earthquakes Today! This application provides a 3D visualization of recent earthquake activity worldwide.
+            Watch real-time earthquake data appear on a rotating Earth model, where each point represents an earthquake, sized
+            by its magnitude. Use the interactive controls below to explore events throughout the day.</p>
+    </div>
+
+    <!-- Main container for the 3D canvas -->
+    <div id="container">
+        <canvas id="earthquakeCanvas"></canvas>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Nathan Wallace | Data sourced from <a href="https://earthquake.usgs.gov" target="_blank" style="color: #00aaff; text-decoration: none;">USGS Earthquake API</a></p>
+    </footer>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Add today's date to the page title and h1 header
+        const currentDate = new Date();
+        const formattedDate = currentDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Update the page title
+        document.title = `Earthquakes Today - ${formattedDate}`;
+
+        // Update the h1 header with the current date
+        const headerElement = document.querySelector('header h1');
+        headerElement.textContent = `🌍 Earthquakes Today - ${formattedDate} 🌏`;
+    </script>
 </body>
+
 </html>
