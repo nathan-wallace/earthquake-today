@@ -16,7 +16,7 @@ renderer.domElement.setAttribute('aria-label', '3D Earth Visualization');
 
 // Set up the camera
 const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-camera.position.z = 150; // Start closer for better initial zoom-in effect
+camera.position.z = 100; // Start closer for better initial zoom-in effect
 
 // Handle window resizing to keep the renderer and camera in sync with the container
 window.addEventListener('resize', () => {
@@ -337,7 +337,7 @@ function animate() {
     // Default animation: Rotate and zoom in until user interaction
     if (!userInteracted) {
         earthGroup.rotation.y += 0.001; // Slow rotation
-        camera.position.z = Math.max(camera.position.z - 0.2, 100); // Slow zoom in until z = 100
+        camera.position.z = Math.max(camera.position.z - 0.2, 70); // Slow zoom in until z = 100
     }
 
     // Update the time and visibility of data points if playing
