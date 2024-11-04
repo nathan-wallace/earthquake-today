@@ -2,6 +2,9 @@
 
 This app is a **3D visualization** of recent earthquake data across the globe, using **Three.js** to create an interactive experience! 🌐 Earthquake data is displayed as animated points on a 3D Earth model, with options to control playback, time, and interactivity.
 
+
+**[Earthquakes Today App](https://nathan-wallace.github.io/earthquakes-today/)**
+
 ## ✨ Features
 
 - **🌎 Realistic 3D Earth Model**: Displays a globe with realistic textures, lighting, and an atmospheric glow.
