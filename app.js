@@ -107,7 +107,7 @@ scene.add(atmosphere);
 const earthGroup = new THREE.Group();
 earthGroup.add(earth);
 earthGroup.add(atmosphere);
-earthGroup.rotation.x = 20 * (Math.PI / 180); // Tilt down by 20 degrees
+earthGroup.rotation.x = 30 * (Math.PI / 180); // Tilt up by 20 degrees
 scene.add(earthGroup);
 
 // Add UI elements (time slider and play/pause button)
@@ -269,7 +269,57 @@ container.addEventListener('mousemove', (event) => {
         tooltip.style.display = 'none';
     }
 });
+let previousTouchDistance = 0;
+let touchStartPos = { x: 0, y: 0 };
+let isTouching = false;
 
+// Handle touch start for rotation and zoom
+container.addEventListener('touchstart', (event) => {
+    if (event.touches.length === 1) {
+        // Single-touch for rotation
+        isTouching = true;
+        touchStartPos.x = event.touches[0].clientX;
+        touchStartPos.y = event.touches[0].clientY;
+    } else if (event.touches.length === 2) {
+        // Multi-touch for pinch-to-zoom
+        const touchDistance = Math.hypot(
+            event.touches[0].clientX - event.touches[1].clientX,
+            event.touches[0].clientY - event.touches[1].clientY
+        );
+        previousTouchDistance = touchDistance;
+    }
+    userInteracted = true;
+});
+
+container.addEventListener('touchmove', (event) => {
+    if (isTouching && event.touches.length === 1) {
+        // Single-touch drag to rotate
+        const deltaX = event.touches[0].clientX - touchStartPos.x;
+        const deltaY = event.touches[0].clientY - touchStartPos.y;
+
+        const rotationSpeed = 0.005;
+        earthGroup.rotation.y += deltaX * rotationSpeed;
+        earthGroup.rotation.x += deltaY * rotationSpeed;
+
+        touchStartPos.x = event.touches[0].clientX;
+        touchStartPos.y = event.touches[0].clientY;
+    } else if (event.touches.length === 2) {
+        // Multi-touch for pinch-to-zoom
+        const touchDistance = Math.hypot(
+            event.touches[0].clientX - event.touches[1].clientX,
+            event.touches[0].clientY - event.touches[1].clientY
+        );
+
+        const zoomDelta = (previousTouchDistance - touchDistance) * 0.05;
+        camera.position.z += zoomDelta;
+        camera.position.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.position.z));
+        previousTouchDistance = touchDistance;
+    }
+});
+
+container.addEventListener('touchend', () => {
+    isTouching = false;
+});
 // Track current time for animation purposes
 let previousMousePosition = { x: 0, y: 0 };
 let isDragging = false;
@@ -377,7 +427,7 @@ function animate() {
     // Default animation: Rotate and zoom in until user interaction
     if (!userInteracted) {
         earthGroup.rotation.y += 0.001; // Slow rotation
-        camera.position.z = Math.max(camera.position.z - 0.2, 70); // Slow zoom in until z = 100
+        camera.position.z = Math.max(camera.position.z - 0.2, 55); // Slow zoom in until z = 100
     }
 
     // Update the time and visibility of data points if playing
