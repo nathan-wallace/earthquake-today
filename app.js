@@ -52,13 +52,39 @@ scene.add(directionalLight);
 
 // Create Earth sphere with realistic textures
 const earthGeometry = new THREE.SphereGeometry(30, 64, 64);
+
+
+// Create a preloader element
+const preloader = document.createElement('div');
+preloader.id = 'preloader';
+preloader.style.position = 'absolute';
+preloader.style.width = '100%';
+preloader.style.height = '100%';
+preloader.style.backgroundColor = '#1b1b1b';
+preloader.style.color = 'white';
+preloader.style.display = 'flex';
+preloader.style.alignItems = 'center';
+preloader.style.justifyContent = 'center';
+preloader.style.fontSize = '1.5em';
+preloader.innerText = 'Loading...';
+container.appendChild(preloader);
+
+// Adjust loading of textures to show progress
 const textureLoader = new THREE.TextureLoader();
+let texturesLoaded = 0;
+const totalTextures = 3; // Total number of textures to load
+
+function checkLoadingComplete() {
+    texturesLoaded++;
+    if (texturesLoaded === totalTextures) {
+        preloader.style.display = 'none'; // Hide preloader once all textures are loaded
+    }
+}
 
 const earthMaterial = new THREE.MeshPhongMaterial({
-
-    map: textureLoader.load('./earth_atmos_2048.jpg'),
-    bumpMap: textureLoader.load('./earth_normal_2048.jpg'),
-    specularMap: textureLoader.load('./earth_specular_2048.jpg'),
+    map: textureLoader.load('./earth_atmos_2048.jpg', checkLoadingComplete),
+    bumpMap: textureLoader.load('./earth_normal_2048.jpg', checkLoadingComplete),
+    specularMap: textureLoader.load('./earth_specular_2048.jpg', checkLoadingComplete),
     bumpScale: 0.5,
     specular: new THREE.Color('white'),
     shininess: 50
@@ -138,6 +164,7 @@ async function loadData() {
         const response = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
         const data = await response.json();
         visualizeData(data);
+        checkLoadingComplete();
     } catch (error) {
         console.error("Error loading data:", error);
     }
@@ -145,6 +172,13 @@ async function loadData() {
 
 // Visualize earthquake data in 3D
 function visualizeData(data) {
+    const totalEarthquakes = data.features.length;
+
+    // Find the span element by its ID and update its inner text
+    const totalEarthquakesElement = document.getElementById("totalEarthquakes");
+    if (totalEarthquakesElement) {
+        totalEarthquakesElement.innerText = totalEarthquakes;
+    }
     data.features.forEach(feature => {
         const { coordinates } = feature.geometry;
         const magnitude = feature.properties.mag;

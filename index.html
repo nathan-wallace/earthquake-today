@@ -125,7 +125,7 @@
 
     <!-- Description section -->
     <div id="description">
-        <p>Every day, countless earthquakes occur across the globe— With real-time data sourced from the USGS, you can view recent earthquake activity around the globe. Each point represents an earthquake, with its size reflecting the quake's magnitude.</p>
+        <p>Today <span id="totalEarthquakes"></span> earthquakes occured across the globe— With real-time data sourced from the USGS, you can view recent earthquake activity around the globe. Each point represents an earthquake, with its size reflecting the quake's magnitude.</p>
     </div>
 
     <!-- Main container for the 3D canvas -->
@@ -149,9 +149,6 @@
             month: 'long',
             day: 'numeric'
         });
-
-        // Update the page title
-        document.title = `Earthquakes Today - ${formattedDate}`;
 
         // Update the h1 header with the current date
         const headerElement = document.querySelector('header h2');
