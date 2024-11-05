@@ -13,6 +13,7 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.domElement.style.imageRendering = 'crisp-edges';
 renderer.domElement.setAttribute('aria-label', '3D Earth Visualization');
+renderer.setClearColor(0x1b1b1b); // Set background color of the canvas
 
 // Set up the camera
 const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -68,7 +69,7 @@ scene.add(earth);
 // Add atmosphere (glow effect)
 const atmosphereGeometry = new THREE.SphereGeometry(32, 64, 64);
 const atmosphereMaterial = new THREE.MeshBasicMaterial({
-    color: 0x00aaff,
+    color: 0x99BACA,
     side: THREE.BackSide,
     transparent: true,
     opacity: 0.1
@@ -85,19 +86,22 @@ scene.add(earthGroup);
 
 // Add UI elements (time slider and play/pause button)
 const timeSliderContainer = document.createElement('div');
-timeSliderContainer.style.position = 'absolute';
-timeSliderContainer.style.bottom = '20px';
-timeSliderContainer.style.left = '50%';
-timeSliderContainer.style.transform = 'translateX(-50%)';
-timeSliderContainer.style.width = '80%';
+timeSliderContainer.style.position = 'relative'; // Use relative positioning
+timeSliderContainer.style.marginBottom = '0px'; // Add space between the timeline and globe
+timeSliderContainer.style.width = '100%';
+timeSliderContainer.style.maxWidth = '1200px';
 timeSliderContainer.style.textAlign = 'center';
 timeSliderContainer.style.color = 'white';
 timeSliderContainer.style.padding = '10px';
+timeSliderContainer.style.paddingBottom = '0px';
 timeSliderContainer.style.backgroundColor = '#1b1b1b';
 timeSliderContainer.style.borderRadius = '8px';
 timeSliderContainer.style.boxSizing = 'border-box';
-document.body.appendChild(timeSliderContainer);
 
+// Insert the timeline container above the globe container
+container.parentElement.insertBefore(timeSliderContainer, container);
+
+// Create the label, slider, time display, and play button
 const timeSliderLabel = document.createElement('label');
 timeSliderLabel.innerText = 'Time: ';
 timeSliderLabel.style.marginRight = '10px';
@@ -113,12 +117,14 @@ timeSliderContainer.appendChild(timeSlider);
 
 const timeDisplay = document.createElement('span');
 timeDisplay.style.marginLeft = '10px';
+timeDisplay.innerText = '00:00';
 timeSliderContainer.appendChild(timeDisplay);
 
 const playButton = document.createElement('button');
 playButton.innerText = 'Pause';
 playButton.style.marginLeft = '10px';
 timeSliderContainer.appendChild(playButton);
+
 
 // Load and parse earthquake data
 let dataPoints = [];

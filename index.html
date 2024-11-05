@@ -31,6 +31,10 @@
             margin: 0;
             font-size: 2em;
         }
+        header h2 {
+            margin: 0;
+            font-size: 1em;
+        }
 
         /* Description styling */
         #description {
@@ -53,7 +57,7 @@
             align-items: center;
             position: relative;
             background-color: #1b1b1b;
-            margin: 15px 0; /* Add margin to visually separate from other sections */
+            margin: 0px 20px 0 20px; /* Add margin to visually separate from other sections */
         }
 
         /* Ensure the canvas fills the container with aspect ratio control */
@@ -116,13 +120,12 @@
     <!-- Header -->
     <header>
         <h1>🌍 Earthquakes Today 🌏</h1>
+        <h2></h2>
     </header>
 
     <!-- Description section -->
     <div id="description">
-        <p>Welcome to Earthquakes Today! This application provides a 3D visualization of recent earthquake activity worldwide.
-            Watch real-time earthquake data appear on a rotating Earth model, where each point represents an earthquake, sized
-            by its magnitude. Use the interactive controls below to explore events throughout the day.</p>
+        <p>Every day, countless earthquakes occur across the globe— With real-time data sourced from the USGS, you can view recent earthquake activity around the globe. Each point represents an earthquake, with its size reflecting the quake's magnitude.</p>
     </div>
 
     <!-- Main container for the 3D canvas -->
@@ -151,8 +154,8 @@
         document.title = `Earthquakes Today - ${formattedDate}`;
 
         // Update the h1 header with the current date
-        const headerElement = document.querySelector('header h1');
-        headerElement.textContent = `🌍 Earthquakes Today - ${formattedDate} 🌏`;
+        const headerElement = document.querySelector('header h2');
+        headerElement.textContent = `${formattedDate}`;
     </script>
 </body>
 
