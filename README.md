@@ -1,9 +1,9 @@
 # 🌍 Earthquakes Today! 🌏
 
-This app is a **3D visualization** of recent earthquake data across the globe, using **Three.js** to create an interactive experience! 🌐 Earthquake data is displayed as animated points on a 3D Earth model, with options to control playback, time, and interactivity.
+This app is a **3D visualization** of recent earthquake data across the globe, using **Three.js** to create an interactive map. 🌐 Earthquake data is displayed as animated points on a 3D Earth model, with options to control playback, time, and interactivity.
 
 
-**[Earthquakes Today App](https://nathan-wallace.github.io/earthquakes-today/)**
+**[Earthquakes Today Page](https://nathan-wallace.github.io/earthquakes-today/)**
 
 ## ✨ Features
 
@@ -22,9 +22,3 @@ This app is a **3D visualization** of recent earthquake data across the globe, u
 - **Three.js**: Renders the 3D Earth model and animations, creating an immersive experience.
 - **JavaScript**: Powers app logic and user interactivity.
 - **🚀 Web APIs**: Accesses **real-time earthquake data** from the **[USGS Earthquake API](https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson)** in GeoJSON format. 🌍✨
-
-## 📥 Installation
-
-1. Clone the repository:
-   ```bash
-   git clone [URL to your repository]
